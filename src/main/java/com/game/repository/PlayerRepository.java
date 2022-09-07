@@ -1,9 +1,11 @@
 package com.game.repository;
 
-import com.game.entity.PlayerEntity;
-import org.springframework.data.repository.CrudRepository;
+import com.game.entity.Player;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-public interface PlayerRepository extends CrudRepository<PlayerEntity, Long> {
+@Repository
+public interface PlayerRepository extends JpaRepository<Player, Long> {
 
 
 }
