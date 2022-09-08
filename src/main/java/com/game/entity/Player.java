@@ -19,38 +19,22 @@ public class Player implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
-
-    @Column(name = "name")
     private String name;
-
-    @Column(name = "title")
     private String title;
-
-    @Column(name = "race")
     @Enumerated(EnumType.STRING)
     private Race race;
-
-    @Column(name = "profession")
     @Enumerated(EnumType.STRING)
     private Profession profession;
 
-    @Column(name = "birthday")
-    @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "yyyy-MM-dd")
-
-
+    @JsonFormat(shape = JsonFormat.Shape.NUMBER,pattern = "yyyy-MM-dd")
     private Date birthday;
-
     @Column(name = "banned")
     private boolean isBanned;
-
-    @Column(name = "experience")
     private Integer experience;
-
-    @Column(name = "level")
     private Integer level;
-
-    @Column(name = "untilNextLevel")
     private Integer untilNextLevel;
+
+
     /*Constructors*/
 
     public Player() {
