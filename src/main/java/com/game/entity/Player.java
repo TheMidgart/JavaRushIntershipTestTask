@@ -1,9 +1,7 @@
 package com.game.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonRootName;
-import com.game.entity.Profession;
-import com.game.entity.Race;
+import com.game.AbstractPlayer;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -11,25 +9,32 @@ import java.util.Date;
 import java.util.Objects;
 
 @Entity
-
 @Table(name = "player")
-public class Player implements Serializable {
+public class Player implements Serializable, AbstractPlayer {
     //Creating fields which located in DAO
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Column(length = 12, nullable = false)
     private String name;
+    @Column(length = 30, nullable = false)
     private String title;
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private Race race;
+
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private Profession profession;
 
-    @JsonFormat(shape = JsonFormat.Shape.NUMBER,pattern = "yyyy-MM-dd")
+    @Column(nullable = false)
+    @JsonFormat(shape = JsonFormat.Shape.NUMBER, pattern = "yyyy-MM-dd")
     private Date birthday;
-    @Column(name = "banned")
-    private boolean isBanned;
+
+    @Column(name = "banned",columnDefinition = "false")
+    private boolean banned;
+
     private Integer experience;
     private Integer level;
     private Integer untilNextLevel;
@@ -41,16 +46,17 @@ public class Player implements Serializable {
     }
 
     public Player(String name, String title, Race race, Profession profession, Date birthday, boolean isBanned,
-                    Integer experience) {
+                    Integer experience, Integer level, Integer untilNextLevel) {
         this.name = name;
         this.title = title;
         this.race = race;
         this.profession = profession;
         this.birthday = birthday;
-        this.isBanned = isBanned;
+        this.banned = isBanned;
         this.experience = experience;
-        this.level = 1;//заглушка
-        this.untilNextLevel = 1;//заглушка
+        this.level = level;
+        this.untilNextLevel = untilNextLevel;
+
     }
 
     /* getters and setters for fields    */
@@ -106,11 +112,11 @@ public class Player implements Serializable {
     }
 
     public boolean isBanned() {
-        return isBanned;
+        return banned;
     }
 
     public void setBanned(boolean banned) {
-        isBanned = banned;
+        this.banned = banned;
     }
 
     public Integer getExperience() {
@@ -148,7 +154,7 @@ public class Player implements Serializable {
                 ", race=" + race +
                 ", profession=" + profession +
                 ", birthday=" + birthday +
-                ", isBanned=" + isBanned +
+                ", isBanned=" + banned +
                 ", experience=" + experience +
                 ", level=" + level +
                 ", untilNextLevel=" + untilNextLevel +
@@ -160,7 +166,7 @@ public class Player implements Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Player player = (Player) o;
-        return isBanned == player.isBanned && id.equals(player.id) && name.equals(player.name)
+        return banned == player.banned && id.equals(player.id) && name.equals(player.name)
                 && title.equals(player.title) && race == player.race && profession == player.profession
                 && birthday.equals(player.birthday) && experience.equals(player.experience)
                 && level.equals(player.level) && untilNextLevel.equals(player.untilNextLevel);
@@ -168,6 +174,6 @@ public class Player implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, title, race, profession, birthday, isBanned, experience, level, untilNextLevel);
+        return Objects.hash(id, name, title, race, profession, birthday, banned, experience, level, untilNextLevel);
     }
 }
