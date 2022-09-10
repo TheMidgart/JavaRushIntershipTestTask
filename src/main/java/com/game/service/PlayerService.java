@@ -4,23 +4,15 @@ import com.game.controller.PlayerOrder;
 import com.game.dto.PlayerDTO;
 import com.game.dto.PlayerRequestParams;
 import com.game.entity.Player;
-import com.game.entity.Profession;
-import com.game.entity.Race;
 import com.game.exceptions.InvalidIdException;
 import com.game.exceptions.InvalidPlayerException;
 import com.game.repository.PlayerRepository;
 import com.game.repository.PlayerSpecification;
-import org.hibernate.Criteria;
-import org.hibernate.internal.CriteriaImpl;
-import org.hibernate.query.criteria.internal.CriteriaBuilderImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.support.PagedListHolder;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 
@@ -28,9 +20,46 @@ import java.util.List;
 public class PlayerService {
     public static final Long TWO_THOUSAND_DATE_IN_MIL=946674000000L;
     public static final Long THREE_THOUSAND_DATE_IN_MIL=32503669200000L;
-
     @Autowired
     private PlayerRepository repository;
+
+
+    public List<Player> getAllPlayers(PlayerRequestParams params)
+    {
+        int pageSize = 3;
+        int pageNumber = 0;
+
+
+        PagedListHolder page = new PagedListHolder(searchWithParams(params));
+        if (params.getPageSize()!=null){
+            pageSize = params.getPageSize();
+        }
+        if (params.getPageNumber()!=null){
+            pageNumber= params.getPageNumber();
+        }
+        page.setPageSize(pageSize);
+        page.setPage(pageNumber);
+        return page.getPageList();
+    }
+
+    public Integer getPlayersCount(PlayerRequestParams params){
+        return searchWithParams(params).size();
+    }
+
+    public Player getPlayerById(Long id) throws InvalidIdException, InvalidPlayerException {
+        checkId(id);
+        return repository.findById(id).get();
+    }
+
+    private List<Player> searchWithParams (PlayerRequestParams params){
+        PlayerOrder order = PlayerOrder.ID;
+        if (params.getOrder()!=null){
+            order=params.getOrder();
+        }
+
+        return repository.findAll(new PlayerSpecification(params),Sort.by(order.getFieldName()));
+
+    }
 
     public Player createPlayer(PlayerDTO playerDTO) throws InvalidPlayerException {
         if (!checkPlayer(playerDTO)) {
@@ -45,24 +74,14 @@ public class PlayerService {
             return player;
         }
     }
-
     public void deletePlayer(Long id) throws InvalidIdException, InvalidPlayerException {
-        if (!(id instanceof Number)||id==null||id%1!=0||id<0){
-            throw new InvalidIdException();
-        }
-        if (!repository.existsById(id)){
-            throw new InvalidPlayerException();
-        }
+        checkId(id);
         repository.deleteById(id);
 
     }
-    public Player updatePlayer(Long id, PlayerDTO playerDTO) throws InvalidIdException, InvalidPlayerException {
-        if (!(id instanceof Number)||id==null||id%1!=0||id<0){
-            throw new InvalidIdException();
-        }
-        if (!repository.existsById(id)){
-            throw new InvalidPlayerException();
-        }
+
+    public Player updatePlayer(Long id, Player playerDTO) throws InvalidIdException, InvalidPlayerException {
+        checkId(id);
         Player playerForUpdate =  repository.findById(id).get();
         if (playerDTO.getName()!=null) playerForUpdate.setName(playerDTO.getName());
         if (playerDTO.getTitle()!=null) playerForUpdate.setTitle(playerDTO.getTitle());
@@ -76,31 +95,10 @@ public class PlayerService {
             playerForUpdate.setUntilNextLevel(exp);
         }
         if (playerDTO.isBanned()==null) playerForUpdate.setBanned(false);
+        else playerForUpdate.setBanned(playerDTO.isBanned());
         repository.save(playerForUpdate);
         return playerForUpdate;
 
-    }
-
-    public List<Player> getAllPlayers(PlayerRequestParams params)
-    {
-        int pageSize = 3;
-        int pageNumber = 0;
-        PlayerOrder order = PlayerOrder.ID;
-        if (params.getOrder()!=null){
-            order=params.getOrder();
-        }
-
-        PagedListHolder page = new PagedListHolder(repository.findAll(new PlayerSpecification(params),
-                Sort.by(order.getFieldName())));
-        if (params.getPageSize()!=null){
-            pageSize = params.getPageSize();
-        }
-        if (params.getPageNumber()!=null){
-            pageNumber= params.getPageNumber();
-        }
-        page.setPageSize(pageSize);
-        page.setPage(pageNumber);
-        return page.getPageList();
     }
 
     private boolean checkPlayer(PlayerDTO playerDTO) {
@@ -126,6 +124,15 @@ public class PlayerService {
         Integer result = (int) Math.sqrt(2500+experience*200);
         result = (result-50)/100;
         return  result;
+    }
+
+    private void checkId(Long id) throws InvalidIdException, InvalidPlayerException{
+        if (!(id instanceof Number)||id==null||id%1!=0||id<=0){
+            throw new InvalidIdException();
+        }
+        if (!repository.existsById(id)){
+            throw new InvalidPlayerException();
+        }
     }
 
 }
