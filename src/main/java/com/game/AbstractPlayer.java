@@ -16,8 +16,8 @@ public interface AbstractPlayer {
     public void setProfession(Profession profession);
     public Date getBirthday();
     public void setBirthday(Date birthday);
-    public boolean isBanned();
-    public void setBanned(boolean banned);
+    public Boolean isBanned();
+    public void setBanned(Boolean banned);
     public Integer getExperience();
     public void setExperience(Integer experience);
 }

@@ -33,7 +33,7 @@ public class Player implements Serializable, AbstractPlayer {
     private Date birthday;
 
     @Column(name = "banned",columnDefinition = "false")
-    private boolean banned;
+    private Boolean banned;
 
     private Integer experience;
     private Integer level;
@@ -111,11 +111,11 @@ public class Player implements Serializable, AbstractPlayer {
         this.birthday = birthday;
     }
 
-    public boolean isBanned() {
+    public Boolean isBanned() {
         return banned;
     }
 
-    public void setBanned(boolean banned) {
+    public void setBanned(Boolean banned) {
         this.banned = banned;
     }
 

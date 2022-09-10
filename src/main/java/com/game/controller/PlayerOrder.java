@@ -16,4 +16,5 @@ public enum PlayerOrder {
     public String getFieldName() {
         return fieldName;
     }
+
 }

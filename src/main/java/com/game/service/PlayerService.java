@@ -1,13 +1,23 @@
 package com.game.service;
 
+import com.game.controller.PlayerOrder;
 import com.game.dto.PlayerDTO;
+import com.game.dto.PlayerRequestParams;
 import com.game.entity.Player;
 import com.game.entity.Profession;
 import com.game.entity.Race;
 import com.game.exceptions.InvalidIdException;
 import com.game.exceptions.InvalidPlayerException;
 import com.game.repository.PlayerRepository;
+import com.game.repository.PlayerSpecification;
+import org.hibernate.Criteria;
+import org.hibernate.internal.CriteriaImpl;
+import org.hibernate.query.criteria.internal.CriteriaBuilderImpl;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.support.PagedListHolder;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -37,7 +47,7 @@ public class PlayerService {
     }
 
     public void deletePlayer(Long id) throws InvalidIdException, InvalidPlayerException {
-        if (!(id instanceof Long)||id==null){
+        if (!(id instanceof Number)||id==null||id%1!=0||id<0){
             throw new InvalidIdException();
         }
         if (!repository.existsById(id)){
@@ -47,7 +57,7 @@ public class PlayerService {
 
     }
     public Player updatePlayer(Long id, PlayerDTO playerDTO) throws InvalidIdException, InvalidPlayerException {
-        if (!(id instanceof Long)||id==null){
+        if (!(id instanceof Number)||id==null||id%1!=0||id<0){
             throw new InvalidIdException();
         }
         if (!repository.existsById(id)){
@@ -65,14 +75,32 @@ public class PlayerService {
             playerForUpdate.setLevel(exp);
             playerForUpdate.setUntilNextLevel(exp);
         }
-        playerForUpdate.setBanned(playerDTO.isBanned());
+        if (playerDTO.isBanned()==null) playerForUpdate.setBanned(false);
         repository.save(playerForUpdate);
         return playerForUpdate;
 
     }
 
-    public List<Player> getAllPlayers() {
-        return repository.findAll();
+    public List<Player> getAllPlayers(PlayerRequestParams params)
+    {
+        int pageSize = 3;
+        int pageNumber = 0;
+        PlayerOrder order = PlayerOrder.ID;
+        if (params.getOrder()!=null){
+            order=params.getOrder();
+        }
+
+        PagedListHolder page = new PagedListHolder(repository.findAll(new PlayerSpecification(params),
+                Sort.by(order.getFieldName())));
+        if (params.getPageSize()!=null){
+            pageSize = params.getPageSize();
+        }
+        if (params.getPageNumber()!=null){
+            pageNumber= params.getPageNumber();
+        }
+        page.setPageSize(pageSize);
+        page.setPage(pageNumber);
+        return page.getPageList();
     }
 
     private boolean checkPlayer(PlayerDTO playerDTO) {
@@ -82,7 +110,8 @@ public class PlayerService {
         if (playerDTO.getBirthday().before(new Date(TWO_THOUSAND_DATE_IN_MIL))) return false;
         if (playerDTO.getBirthday().after(new Date(THREE_THOUSAND_DATE_IN_MIL))) return false;
         if (playerDTO.getProfession() == null) return false;  //мб проверка на вхождение в enum Prof
-        if (playerDTO.getRace() == null) return false;        //мб проверка на вхождение в enum
+        if (playerDTO.getRace() == null) return false;//мб проверка на вхождение в enum
+       // if (playerDTO.isBanned()==null) return false;
         if (playerDTO.getExperience() < 0 || playerDTO.getExperience() > 10000000) return false;
         return true;
     }

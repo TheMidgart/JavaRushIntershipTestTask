@@ -21,7 +21,7 @@ public class PlayerDTO implements AbstractPlayer, Serializable {
     private Profession profession;
     @JsonFormat(shape = JsonFormat.Shape.NUMBER, pattern = "yyyy-MM-dd")
     private Date birthday;
-    private boolean banned;
+    private Boolean banned;
     private Integer experience;
 
     private Integer level;
@@ -115,12 +115,12 @@ public class PlayerDTO implements AbstractPlayer, Serializable {
     }
 
     @Override
-    public boolean isBanned() {
+    public Boolean isBanned() {
         return banned;
     }
 
     @Override
-    public void setBanned(boolean banned) {
+    public void setBanned(Boolean banned) {
         this.banned = banned;
     }
 
