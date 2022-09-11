@@ -5,9 +5,11 @@ import com.game.dto.PlayerRequestParams;
 import com.game.entity.Player;
 import com.game.exceptions.InvalidIdException;
 import com.game.exceptions.InvalidPlayerException;
+import com.game.exceptions.PlayerNotFoundException;
 import com.game.service.PlayerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -33,7 +35,7 @@ public class PlayerController {
     public ResponseEntity<Player> getPlayerById(@PathVariable Long id){
         try {
             return ResponseEntity.ok(service.getPlayerById(id));
-        } catch (InvalidPlayerException e) {
+        } catch (InvalidPlayerException|PlayerNotFoundException e) {
             return ResponseEntity.status(404).body(null);
         } catch (InvalidIdException e) {
             return ResponseEntity.status(400).body(null);
@@ -41,17 +43,13 @@ public class PlayerController {
 
     }
 
-
-
-
     @PostMapping("/players")
-    public ResponseEntity<Player> playerAdd(@RequestBody PlayerDTO playerDTO) {
-
-
+    public ResponseEntity<Player> playerAdd(@Validated @RequestBody PlayerDTO playerDTO) {
         Player playerForAdd = null;
         try {
+            if (playerDTO==null) throw new InvalidPlayerException();
             playerForAdd = service.createPlayer(playerDTO);
-        } catch (InvalidPlayerException e) {
+        } catch (InvalidPlayerException|PlayerNotFoundException e) {
             return ResponseEntity.badRequest().body(null);
         }
         return ResponseEntity.ok(playerForAdd);
@@ -62,7 +60,7 @@ public class PlayerController {
         try {
             service.deletePlayer(id);
             return ResponseEntity.ok("");
-        } catch (InvalidPlayerException e) {
+        } catch (InvalidPlayerException |PlayerNotFoundException e) {
             return ResponseEntity.status(404).body("Player not found");
         } catch (InvalidIdException e) {
             return ResponseEntity.status(400).body("Id is not valid");
@@ -70,14 +68,17 @@ public class PlayerController {
     }
 
     @PostMapping("/players/{id}")
-    public ResponseEntity<Player> updatePlayer(@PathVariable Long id, @RequestBody Player player) {
+    public ResponseEntity<Player> updatePlayer(@PathVariable Long id, @RequestBody PlayerDTO player) {
         try {
             Player upPlayer = service.updatePlayer(id, player);
-            return ResponseEntity.ok(player);
+            return ResponseEntity.ok(upPlayer);
         } catch (InvalidPlayerException e) {
-            return ResponseEntity.status(404).body(null);
+            return ResponseEntity.status(400).body(null);
         } catch (InvalidIdException e) {
             return ResponseEntity.status(400).body(null);
+        }
+        catch (PlayerNotFoundException e){
+            return ResponseEntity.status(404).body(null);
         }
     }
 }

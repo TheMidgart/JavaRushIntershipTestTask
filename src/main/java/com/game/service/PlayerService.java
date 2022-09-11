@@ -6,6 +6,7 @@ import com.game.dto.PlayerRequestParams;
 import com.game.entity.Player;
 import com.game.exceptions.InvalidIdException;
 import com.game.exceptions.InvalidPlayerException;
+import com.game.exceptions.PlayerNotFoundException;
 import com.game.repository.PlayerRepository;
 import com.game.repository.PlayerSpecification;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,12 +24,10 @@ public class PlayerService {
     @Autowired
     private PlayerRepository repository;
 
-
     public List<Player> getAllPlayers(PlayerRequestParams params)
     {
         int pageSize = 3;
         int pageNumber = 0;
-
 
         PagedListHolder page = new PagedListHolder(searchWithParams(params));
         if (params.getPageSize()!=null){
@@ -46,7 +45,7 @@ public class PlayerService {
         return searchWithParams(params).size();
     }
 
-    public Player getPlayerById(Long id) throws InvalidIdException, InvalidPlayerException {
+    public Player getPlayerById(Long id) throws InvalidIdException, InvalidPlayerException, PlayerNotFoundException {
         checkId(id);
         return repository.findById(id).get();
     }
@@ -56,9 +55,7 @@ public class PlayerService {
         if (params.getOrder()!=null){
             order=params.getOrder();
         }
-
         return repository.findAll(new PlayerSpecification(params),Sort.by(order.getFieldName()));
-
     }
 
     public Player createPlayer(PlayerDTO playerDTO) throws InvalidPlayerException {
@@ -74,14 +71,17 @@ public class PlayerService {
             return player;
         }
     }
-    public void deletePlayer(Long id) throws InvalidIdException, InvalidPlayerException {
+    public void deletePlayer(Long id) throws InvalidIdException, InvalidPlayerException, PlayerNotFoundException {
         checkId(id);
         repository.deleteById(id);
 
     }
 
-    public Player updatePlayer(Long id, Player playerDTO) throws InvalidIdException, InvalidPlayerException {
+    public Player updatePlayer(Long id, PlayerDTO playerDTO) throws InvalidIdException, InvalidPlayerException, PlayerNotFoundException {
         checkId(id);
+       if (!checkCorrectParams(playerDTO)){
+           throw new InvalidPlayerException();
+       }
         Player playerForUpdate =  repository.findById(id).get();
         if (playerDTO.getName()!=null) playerForUpdate.setName(playerDTO.getName());
         if (playerDTO.getTitle()!=null) playerForUpdate.setTitle(playerDTO.getTitle());
@@ -91,8 +91,8 @@ public class PlayerService {
         if (playerDTO.getExperience()!=null){
             Integer exp = playerDTO.getExperience();
             playerForUpdate.setExperience(exp);
-            playerForUpdate.setLevel(exp);
-            playerForUpdate.setUntilNextLevel(exp);
+            playerForUpdate.setLevel(calculateLevel(exp));
+            playerForUpdate.setUntilNextLevel(calculateUntilNextLevel(exp));
         }
         if (playerDTO.isBanned()==null) playerForUpdate.setBanned(false);
         else playerForUpdate.setBanned(playerDTO.isBanned());
@@ -102,15 +102,33 @@ public class PlayerService {
     }
 
     private boolean checkPlayer(PlayerDTO playerDTO) {
-        if (playerDTO.getName().length() > 12 || playerDTO.getName() == null) return false;
-        if (playerDTO.getTitle().length() > 30 || playerDTO.getTitle() == null) return false;
+        if (playerDTO.getName() == null) return false;
+        if (playerDTO.getName().length() > 12 ) return false;
+        if (playerDTO.getTitle()==null) return false;
+        if (playerDTO.getTitle().length() > 30 ) return false;
         if (playerDTO.getBirthday() == null) return false;
         if (playerDTO.getBirthday().before(new Date(TWO_THOUSAND_DATE_IN_MIL))) return false;
         if (playerDTO.getBirthday().after(new Date(THREE_THOUSAND_DATE_IN_MIL))) return false;
-        if (playerDTO.getProfession() == null) return false;  //мб проверка на вхождение в enum Prof
-        if (playerDTO.getRace() == null) return false;//мб проверка на вхождение в enum
-       // if (playerDTO.isBanned()==null) return false;
+        if (playerDTO.getProfession() == null) return false;
+        if (playerDTO.getRace() == null) return false;
         if (playerDTO.getExperience() < 0 || playerDTO.getExperience() > 10000000) return false;
+        return true;
+    }
+
+    private boolean checkCorrectParams(PlayerDTO playerDTO){
+        if (playerDTO.getName()!=null) {
+            if (playerDTO.getName().length() > 12) return false;
+        }
+        if (playerDTO.getTitle()!=null) {
+            if (playerDTO.getTitle().length() > 30 ) return false;
+        }
+        if (playerDTO.getBirthday()!=null) {
+            if (playerDTO.getBirthday().before(new Date(TWO_THOUSAND_DATE_IN_MIL))) return false;
+            if (playerDTO.getBirthday().after(new Date(THREE_THOUSAND_DATE_IN_MIL))) return false;
+        }
+        if (playerDTO.getExperience()!=null) {
+            if (playerDTO.getExperience() < 0 || playerDTO.getExperience() > 10000000) return false;
+        }
         return true;
     }
 
@@ -126,12 +144,12 @@ public class PlayerService {
         return  result;
     }
 
-    private void checkId(Long id) throws InvalidIdException, InvalidPlayerException{
+    private void checkId(Long id) throws InvalidIdException, InvalidPlayerException, PlayerNotFoundException{
         if (!(id instanceof Number)||id==null||id%1!=0||id<=0){
             throw new InvalidIdException();
         }
         if (!repository.existsById(id)){
-            throw new InvalidPlayerException();
+            throw new PlayerNotFoundException();
         }
     }
 
